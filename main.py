@@ -1,5 +1,4 @@
 # -- coding: utf-8 --
-import pymysql
 import os
 import sys
 import io
@@ -8,58 +7,12 @@ import numpy as np
 import json
 from PIL import Image
 from flask import Flask, render_template, request, Response
-from minio import Minio
-from minio.error import ResponseError
 import face_recognition
-
-#
-minio_host = os.environ.get('MINIO_HOST', None)
-minio_access_key = os.environ.get('MINIO_ACCESS_KEY', None)
-minio_secret_key = os.environ.get('MINIO_SECRET_KEY', None)
-minio_secure = False
-minio_bucket = os.environ.get('MINIO_BUCKET', None)
-
-#
-mysql_host = os.environ.get('MYSQL_HOST', None)
-mysql_user = os.environ.get('MYSQL_USER', None)
-mysql_password = os.environ.get('MYSQL_PWD', None)
-mysql_db = os.environ.get('MYSQL_DB', None)
+import my_mysql
+import my_minio
 
 app_port = os.environ.get('APP_PORT', None)
 app = Flask(__name__)
-minio_client = Minio(minio_host, minio_access_key, minio_secret_key, minio_secure)
-
-def get_mysql_conn():
-	conn = pymysql.connect(mysql_host, mysql_user, mysql_password, mysql_db)
-	curs = conn.cursor()
-
-	return conn, curs
-
-def pymysql_commit_query(query):
-	conn, curs = get_mysql_conn()
-	curs.execute(query)
-	conn.commit()
-	conn.close()
-
-def pymysql_fetch_query(query):
-	conn, curs = get_mysql_conn()
-	curs.execute(query)
-	rows = curs.fetchall()
-
-	return rows
-
-def put_file_to_minio(filename, file_content, file_content_length):
-	minio_client.put_object(minio_bucket, filename, file_content, file_content_length)
-	file_url = minio_client.presigned_get_object(minio_bucket, filename)
-
-	return file_url
-
-def check_is_file_exist_in_minio(filename):
-	try:
-		minio_client.stat_object(minio_bucket, filename)
-		return True
-	except Exception as err:
-		return False
 
 '''
 @app.route('/signUp', methods = ['GET','POST'])
@@ -139,7 +92,6 @@ def create_room():
 	pass
 
 if __name__=='__main__':
-	print(minio_access_key, minio_secret_key)
 	app.run(host='0.0.0.0', port=app_port, debug=True, threaded=True)
 
 
