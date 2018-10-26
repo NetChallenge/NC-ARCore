@@ -25,3 +25,19 @@ def pymysql_fetch_query(query):
 	rows = curs.fetchall()
 
 	return rows
+
+def pymysql_fetchone_query(query):
+	conn, curs = get_mysql_conn()
+	curs.execute(query)
+	row = curs.fetchone()
+	
+	return row
+
+def pymysql_commit_query_and_get_last_id(query):
+	conn, curs = get_mysql_conn()
+	curs.execute(query)
+	conn.commit()
+	last_id = curs.lastrowid
+	conn.close()
+	
+	return last_id
