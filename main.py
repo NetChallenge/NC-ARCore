@@ -49,10 +49,11 @@ def save_face():
 	file_length = recv_image.tell()
 	recv_image.seek(0, 0)
 	user_email = request.form['email']
-	
+	user_name = request.form['name']	
+
 	try:
 		image_url = my_minio.put_file_to_minio(user_email+'_face.png', recv_image, file_length)
-		my_mysql.pymysql_commit_query('INSERT INTO face(user_email, image_url) VALUES("'+user_email+'","'+image_url+'") ON DUPLICATE KEY UPDATE image_url="'+image_url+'";')
+		my_mysql.pymysql_commit_query('INSERT INTO face(user_email, user_name, image_url) VALUES("'+user_email+'","'+user_name+'","'+image_url+'") ON DUPLICATE KEY UPDATE image_url="'+image_url+'";')
 		
 		return '1'
 	except Exception as err:
@@ -79,10 +80,11 @@ def save_audio():
 	audio_length = recv_audio.tell()
 	recv_audio.seek(0, 0)
 	user_email = request.form['email']
+	user_name = request.form['name']
 
 	try:
 		audio_url = my_minio.put_file_to_minio(user_email+'_audio.mp4', recv_audio, audio_length)
-		my_mysql.pymysql_commit_query('INSERT INTO voice(user_email, audio_url) VALUES("'+user_email+'","'+audio_url+'")')
+		my_mysql.pymysql_commit_query('INSERT INTO voice(user_email, user_name, audio_url) VALUES("'+user_email+'","'+user_name+'","'+audio_url+'")')
 		
 		return '1'
 	except Exception as err:
@@ -92,26 +94,22 @@ def save_audio():
 @app.route('/getRoomInfoByEmail', methods = ['GET', 'POST'])
 def get_room_info_by_email():
 	user_email = request.args['email']
-	row = my_mysql.pymysql_fetchone_query('SELECT * FROM room WHERE user_email="'+user_email+'";')
-	if len(row) == 0:
+	room_id, room_title, = my_mysql.pymysql_fetchone_query('SELECT room_id, room_title FROM room WHERE user_email="'+user_email+'";')
+	if room_id == None:
 		return ('', http.HTTPStatus.NO_CONTENT)
 
-	f = open("test.txt", "w")
-	for rows in row:
-		f.write(rows)
-	f.close()
-	row = my_mysql.pymysql_fetchone_query('SELECT * FROM room_user WHERE room_id='+str(row['room_id'])+' AND user_email="'+user_email+'";')
+	stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic, = my_mysql.pymysql_fetchone_query('SELECT stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic FROM room_user WHERE room_id='+str(room_id)+' AND user_email="'+user_email+'";')
 
 	json_msg = {}
-	json_msg['room_id'] = row['room_id']
-	json_msg['room_title'] = row['room_title']
-	json_msg['stt_ip'] = row['stt_ip']
-	json_msg['stt_port'] = row['stt_port']
+	json_msg['room_id'] = room_id
+	json_msg['room_title'] = room_title
+	json_msg['stt_ip'] = stt_ip
+	json_msg['stt_port'] = stt_port
 	json_msg['stt_max_size'] = int(1024)
-	json_msg['mqtt_ip'] = row['mqtt_ip']
-	json_msg['mqtt_port'] = row['mqtt_port']
-	json_msg['mqtt_id'] = row['mqtt_id']
-	json_msg['mqtt_topic'] = str(room_id)+"/"+row['mqtt_topic']
+	json_msg['mqtt_ip'] = mqtt_ip
+	json_msg['mqtt_port'] = mqtt_port
+	json_msg['mqtt_id'] = mqtt_id
+	json_msg['mqtt_topic'] = str(room_id)+"/"+mqtt_topic
 	json_string = json.dumps(json_msg)
 
 	return Response(json_string, mimetype="application/json")
@@ -119,23 +117,22 @@ def get_room_info_by_email():
 @app.route('/getRoomInfoByTitle', methods = ['GET', 'POST'])
 def get_room_info_by_title():
 	room_title = request.args['title']
-	rows = my_mysql.pymysql_fetch_query('SELECT * FROM room WHERE room_title="'+room_title+'";')
-	if len(rows) == 0:
+	room_id, user_email, = my_mysql.pymysql_fetchone_query('SELECT room_id, user_email FROM room WHERE room_title="'+room_title+'";')
+	if room_id == None:
 		return ('', http.HTTPStatus.NO_CONTENT)
 
-	rows = my_mysql.pymysql_fetch_query('SELECT * FROM room_user WHERE room_id='+str(rows[0]['room_id'])+' AND user_email="'+rows[0]['user_email']+'";')
+	stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic, = my_mysql.pymysql_fetchone_query('SELECT stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic FROM room_user WHERE room_id='+str(room_id)+' AND user_email="'+user_email+'";')
 
-	row = rows[0]
 	json_msg = {}
-	json_msg['room_id'] = row['room_id']
-	json_msg['room_title'] = row['room_title']
-	json_msg['stt_ip'] = row['stt_ip']
-	json_msg['stt_port'] = row['stt_port']
+	json_msg['room_id'] = room_id
+	json_msg['room_title'] = room_title
+	json_msg['stt_ip'] = stt_ip
+	json_msg['stt_port'] = stt_port
 	json_msg['stt_max_size'] = int(1024)
-	json_msg['mqtt_ip'] = row['mqtt_ip']
-	json_msg['mqtt_port'] = row['mqtt_port']
-	json_msg['mqtt_id'] = row['mqtt_id']
-	json_msg['mqtt_topic'] = str(room_id)+"/"+row['mqtt_topic']
+	json_msg['mqtt_ip'] = mqtt_ip
+	json_msg['mqtt_port'] = mqtt_port
+	json_msg['mqtt_id'] = mqtt_id
+	json_msg['mqtt_topic'] = str(room_id)+"/"+mqtt_topic
 	json_string = json.dumps(json_msg)
 
 	return Response(json_string, mimetype="application/json")
@@ -144,6 +141,7 @@ def get_room_info_by_title():
 def create_room():
 	room_title = request.args['title']
 	user_email = request.args['email']
+	user_name = request.args['name']
 
 	#we need to create edge container and mqtt id
 	stt_ip = "163.180.117.216"
@@ -158,7 +156,7 @@ def create_room():
 
 	room_id = my_mysql.pymysql_commit_query_and_get_last_id('INSERT INTO room(room_id, user_email, room_title) VALUES(NULL,"'+user_email+'","'+room_title+'")')
 	room_id = int(room_id)
-	my_mysql.pymysql_commit_query('INSERT INTO room_user(room_id, user_email, stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic) VALUES('+str(room_id)+',"'+user_email+'","'+stt_ip+'",'+str(stt_port)+',"'+mqtt_ip+'",'+str(mqtt_port)+',"'+mqtt_id+'","'+mqtt_topic+'")')
+	my_mysql.pymysql_commit_query('INSERT INTO room_user(room_id, user_email, user_name, stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic) VALUES('+str(room_id)+',"'+user_email+'","'+user_name+'","'+stt_ip+'",'+str(stt_port)+',"'+mqtt_ip+'",'+str(mqtt_port)+',"'+mqtt_id+'","'+mqtt_topic+'")')
 
 	json_msg = {}
 	json_msg['room_id'] = room_id

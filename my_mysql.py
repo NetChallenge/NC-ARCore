@@ -29,9 +29,7 @@ def pymysql_fetch_query(query):
 def pymysql_fetchone_query(query):
 	conn, curs = get_mysql_conn()
 	curs.execute(query)
-	row = curs.fetchone()
-	
-	return row
+	return curs.fetchone()
 
 def pymysql_commit_query_and_get_last_id(query):
 	conn, curs = get_mysql_conn()
