@@ -145,7 +145,7 @@ def create_room():
 
 	#we need to create edge container and mqtt id
 	stt_ip = "163.180.117.216"
-	stt_port = int(5690)
+	stt_port = int(5678)
 	mqtt_ip = "163.180.117.216"
 	mqtt_port = int(1883)
 	mqtt_id = str(uuid.uuid4())
@@ -157,6 +157,9 @@ def create_room():
 	room_id = my_mysql.pymysql_commit_query_and_get_last_id('INSERT INTO room(room_id, user_email, room_title) VALUES(NULL,"'+user_email+'","'+room_title+'")')
 	room_id = int(room_id)
 	my_mysql.pymysql_commit_query('INSERT INTO room_user(room_id, user_email, user_name, stt_ip, stt_port, mqtt_ip, mqtt_port, mqtt_id, mqtt_topic) VALUES('+str(room_id)+',"'+user_email+'","'+user_name+'","'+stt_ip+'",'+str(stt_port)+',"'+mqtt_ip+'",'+str(mqtt_port)+',"'+mqtt_id+'","'+mqtt_topic+'")')
+
+	#we need to create edge container with environment variable
+	
 
 	json_msg = {}
 	json_msg['room_id'] = room_id
