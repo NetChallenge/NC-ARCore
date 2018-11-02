@@ -1,41 +1,55 @@
 import os
 import sys
 import pymysql
-#
-mysql_host = os.environ.get('MYSQL_HOST', None)
-mysql_user = os.environ.get('MYSQL_USER', None)
-mysql_password = os.environ.get('MYSQL_PWD', None)
-mysql_db = os.environ.get('MYSQL_DB', None)
 
-def get_mysql_conn():
-	conn = pymysql.connect(mysql_host, mysql_user, mysql_password, mysql_db)
-	curs = conn.cursor()
+class MyMysql(object):
+	def __init__(self, mysql_host, mysql_user, mysql_password, mysql_db):
+		self.__mysql_host = mysql_host
+		self.__mysql_user = mysql_user
+		self.__mysql_password = mysql_password
+		self.__mysql_db = mysql_db
 
-	return conn, curs
+	def __get_mysql_conn(self):
+		conn = pymysql.connect(self.__mysql_host, self.__mysql_user, self.__mysql_password, self.__mysql_db)
+		curs = conn.cursor()
 
-def pymysql_commit_query(query):
-	conn, curs = get_mysql_conn()
-	curs.execute(query)
-	conn.commit()
-	conn.close()
+		return conn, curs
 
-def pymysql_fetch_query(query):
-	conn, curs = get_mysql_conn()
-	curs.execute(query)
-	rows = curs.fetchall()
+	def pymysql_commit_query(self, query):
+		conn, curs = self.__get_mysql_conn()
+		curs.execute(query)
+		conn.commit()
+		conn.close()
 
-	return rows
+	def pymysql_fetch_query(self, query):
+		conn, curs = self.__get_mysql_conn()
+		curs.execute(query)
+		rows = curs.fetchall()
 
-def pymysql_fetchone_query(query):
-	conn, curs = get_mysql_conn()
-	curs.execute(query)
-	return curs.fetchone()
+		return rows
 
-def pymysql_commit_query_and_get_last_id(query):
-	conn, curs = get_mysql_conn()
-	curs.execute(query)
-	conn.commit()
-	last_id = curs.lastrowid
-	conn.close()
+	def pymysql_fetchone_query(self, query):
+		conn, curs = self.__get_mysql_conn()
+		curs.execute(query)
+		return curs.fetchone()
+
+	def pymysql_commit_query_and_get_last_id(self, query):
+		conn, curs = self.__get_mysql_conn()
+		curs.execute(query)
+		conn.commit()
+		last_id = curs.lastrowid
+		conn.close()
 	
-	return last_id
+		return last_id
+
+	def get_host(self):
+		return self.__mysql_host
+
+	def get_user(self):
+		return self.__mysql_user
+
+	def get_pwd(self):
+		return self.__mysql_password
+
+	def get_db(self):
+		return self.__mysql_db
