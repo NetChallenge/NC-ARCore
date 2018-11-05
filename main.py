@@ -217,7 +217,7 @@ def enter_room():
 			'MINIO_HOST='+minio_client.get_host(),'MINIO_ACCESS_KEY='+minio_client.get_access_key(),
 			'MINIO_SECRET_KEY='+minio_client.get_secret_key(),'MINIO_BUCKET='+minio_client.get_bucket(),
 			'MYSQL_HOST='+mysql_client.get_host(),'MYSQL_USER='+mysql_client.get_user(),'MYSQL_PWD='+mysql_client.get_pwd(),'MYSQL_DB='+mysql_client.get_db(),
-			'MQTT_IP='+mqtt_ip,'MQTT_PORT='+str(mqtt_port),'MQTT_ID='+mqtt_id,'MQTT_TOPIC='+mqtt_topic,
+			'MQTT_IP='+mqtt_ip,'MQTT_PORT='+str(mqtt_port),'MQTT_ID='+mqtt_id,'MQTT_TOPIC='+str(room_id)+"/"+mqtt_topic,
 			'GOOGLE_APPLICATION_CREDENTIALS=/root/ar-server/python/Voucher-82ad460a212c.json',
 			'ROOM_ID='+str(room_id),'USER_EMAIL='+user_email,'USER_NAME='+user_name]
 
